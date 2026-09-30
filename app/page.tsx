@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { listEntries } from "@/lib/entries";
+import { EntryForm } from "./entry-form";
 
 function formatCreatedAt(date: Date) {
   return date.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
@@ -18,6 +19,8 @@ export default async function Home() {
           개발자: 정윤서 (202404307)
         </p>
       </header>
+
+      <EntryForm />
 
       <section>
         {entries.length === 0 ? (
