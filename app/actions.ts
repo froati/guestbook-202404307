@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createEntry } from "@/lib/entries";
+import {
+  createEntry,
+  updateMessage,
+  type GuardedResult,
+} from "@/lib/entries";
 
 export type CreateEntryState = {
   error?: string;
@@ -44,4 +48,49 @@ export async function createEntryAction(
 
   revalidatePath("/");
   return {};
+}
+
+const GUARD_ERRORS: Record<Exclude<GuardedResult, "ok">, string> = {
+  "wrong-password": "비밀번호가 일치하지 않습니다.",
+  "not-found": "이미 삭제된 글입니다.",
+};
+
+export type UpdateMessageState = {
+  ok?: boolean;
+  error?: string;
+  values?: { message: string };
+};
+
+export async function updateMessageAction(
+  _prev: UpdateMessageState,
+  formData: FormData,
+): Promise<UpdateMessageState> {
+  const id = Number(formData.get("id"));
+  const message = field(formData, "message");
+  const password = field(formData, "password");
+  const values = { message };
+
+  if (!Number.isInteger(id)) {
+    return { error: GUARD_ERRORS["not-found"], values };
+  }
+  if (!message || !password) {
+    const missing = [!message && "메시지", !password && "비밀번호"].filter(Boolean);
+    return { error: `${missing.join(", ")}을(를) 입력해 주세요.`, values };
+  }
+  if (message.length > 500) {
+    return { error: "메시지는 500자까지 입력할 수 있습니다.", values };
+  }
+
+  let result: GuardedResult;
+  try {
+    result = await updateMessage({ id, message, password });
+  } catch {
+    return { error: "수정하지 못했습니다. 잠시 후 다시 시도해 주세요.", values };
+  }
+  if (result !== "ok") {
+    return { error: GUARD_ERRORS[result], values };
+  }
+
+  revalidatePath("/");
+  return { ok: true };
 }

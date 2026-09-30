@@ -37,3 +37,31 @@ export async function createEntry(input: {
     VALUES (${input.name}, ${input.message}, ${passwordHash})
   `;
 }
+
+// 글 비밀번호가 필요한 작업(수정·삭제)의 결과
+export type GuardedResult = "ok" | "wrong-password" | "not-found";
+
+async function checkPassword(
+  id: number,
+  password: string,
+): Promise<GuardedResult> {
+  const rows = await sql`SELECT password_hash FROM entries WHERE id = ${id}`;
+  if (rows.length === 0) return "not-found";
+  const matches = await bcrypt.compare(password, rows[0].password_hash);
+  return matches ? "ok" : "wrong-password";
+}
+
+export async function updateMessage(input: {
+  id: number;
+  message: string;
+  password: string;
+}): Promise<GuardedResult> {
+  const check = await checkPassword(input.id, input.password);
+  if (check !== "ok") return check;
+  const rows = await sql`
+    UPDATE entries SET message = ${input.message}
+    WHERE id = ${input.id}
+    RETURNING id
+  `;
+  return rows.length > 0 ? "ok" : "not-found";
+}

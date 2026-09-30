@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { listEntries } from "@/lib/entries";
 import { EntryForm } from "./entry-form";
+import { EntryItem } from "./entry-item";
 
 function formatCreatedAt(date: Date) {
   return date.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
@@ -30,23 +31,14 @@ export default async function Home() {
         ) : (
           <ul className="flex flex-col gap-4">
             {entries.map((entry) => (
-              <li
+              <EntryItem
                 key={entry.id}
-                className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-semibold">{entry.name}</span>
-                  <time
-                    dateTime={entry.createdAt.toISOString()}
-                    className="text-xs text-zinc-500"
-                  >
-                    {formatCreatedAt(entry.createdAt)}
-                  </time>
-                </div>
-                <p className="mt-2 whitespace-pre-wrap break-words">
-                  {entry.message}
-                </p>
-              </li>
+                id={entry.id}
+                name={entry.name}
+                message={entry.message}
+                createdAtIso={entry.createdAt.toISOString()}
+                createdAtText={formatCreatedAt(entry.createdAt)}
+              />
             ))}
           </ul>
         )}
