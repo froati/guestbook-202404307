@@ -65,3 +65,13 @@ export async function updateMessage(input: {
   `;
   return rows.length > 0 ? "ok" : "not-found";
 }
+
+export async function deleteEntry(input: {
+  id: number;
+  password: string;
+}): Promise<GuardedResult> {
+  const check = await checkPassword(input.id, input.password);
+  if (check !== "ok") return check;
+  const rows = await sql`DELETE FROM entries WHERE id = ${input.id} RETURNING id`;
+  return rows.length > 0 ? "ok" : "not-found";
+}

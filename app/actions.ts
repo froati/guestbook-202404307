@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   createEntry,
+  deleteEntry,
   updateMessage,
   type GuardedResult,
 } from "@/lib/entries";
@@ -89,6 +90,39 @@ export async function updateMessageAction(
   }
   if (result !== "ok") {
     return { error: GUARD_ERRORS[result], values };
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export type DeleteEntryState = {
+  ok?: boolean;
+  error?: string;
+};
+
+export async function deleteEntryAction(
+  _prev: DeleteEntryState,
+  formData: FormData,
+): Promise<DeleteEntryState> {
+  const id = Number(formData.get("id"));
+  const password = field(formData, "password");
+
+  if (!Number.isInteger(id)) {
+    return { error: GUARD_ERRORS["not-found"] };
+  }
+  if (!password) {
+    return { error: "비밀번호를 입력해 주세요." };
+  }
+
+  let result: GuardedResult;
+  try {
+    result = await deleteEntry({ id, password });
+  } catch {
+    return { error: "삭제하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+  }
+  if (result !== "ok") {
+    return { error: GUARD_ERRORS[result] };
   }
 
   revalidatePath("/");
